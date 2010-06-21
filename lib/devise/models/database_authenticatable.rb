@@ -74,22 +74,21 @@ module Devise
       def update_with_password(params={})
         current_password = params.delete(:current_password)
 
+	# Only Require current password when a user changes their password.
         if params[:password].blank?
           params.delete(:password)
           params.delete(:password_confirmation) if params[:password_confirmation].blank?
-        end
-
-        result = if valid_password?(current_password)
-          update_attributes(params)
-        else
+        elsif current_password.present? && !valid_password?(current_password)
+          params.delete(:password)
+          params.delete(:password_confirmation)
           message = current_password.blank? ? :blank : :invalid
           self.class.add_error_on(self, :current_password, message, false)
           self.attributes = params
           false
         end
-
-        clean_up_passwords unless result
-        result
+    
+        # Update the rest of the fields.
+        update_attributes(params)
       end
 
       protected
